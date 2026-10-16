@@ -221,8 +221,8 @@ const STEPS = [
   N("DS-09b","copa_eo","Diámetro de copa E–O","m",{step:"0.1",help:"PE-03."}),
   O("DS-10","forma_copa","Forma de copa",["Globosa","Aparasolada","Columnar","Cónica","Ovoide","Irregular","Palmiforme"]),
   N("DS-11","inclinacion_grados","Inclinación","°",{min:0,max:90,step:"1",help:"Fuste recto = 0."}),
-  O("DS-12","inclinacion_dir","Dirección de la inclinación",["N","NE","E","SE","S","SO","O","NO"]),
-  O("DS-13","inclinacion_tipo","Tipo de inclinación",[["reciente","Reciente"],["corregida","Corregida"],["natural","Natural"]]),
+  O("DS-12","inclinacion_dir","Dirección de la inclinación",["N","NE","E","SE","S","SO","O","NO"],{when:f=>num(f.inclinacion_grados)>0}),
+  O("DS-13","inclinacion_tipo","Tipo de inclinación",[["reciente","Reciente"],["corregida","Corregida"],["natural","Natural"]],{when:f=>num(f.inclinacion_grados)>0}),
   O("DS-14","estado_desarrollo","Estado de desarrollo",[["brinzal","Brinzal (< 1,5 m)"],["juvenil","Juvenil"],["maduro","Maduro"],["senescente","Senescente"]],{req:true}),
   O("DS-15","origen_individuo","Origen del individuo",[["plantado","Plantado"],["natural","Natural"],["nose","No se sabe"]])
 ]},
@@ -272,8 +272,8 @@ const STEPS = [
  fields:[
   S("FE-01","ramas_muertas","Ramas muertas",{help:"Porción de copa con ramas secas sin hojas vivas."}),
   S("FE-02","ramas_rotas","Ramas rotas o colgantes",{help:"Extremo colgando, astilladas o atrapadas."}),
-  N("FE-03","diam_rama_muerta_cm","Diámetro de la rama muerta mayor","cm",{step:"0.1",help:"Una botella ≈ 7 cm."}),
-  B("FE-04","ramas_sobre_transito","¿Ramas muertas o rotas sobre zonas de tránsito?",{}),
+  N("FE-03","diam_rama_muerta_cm","Diámetro de la rama muerta mayor","cm",{step:"0.1",help:"Una botella ≈ 7 cm.",when:f=>num(f.ramas_muertas)>0||num(f.ramas_rotas)>0}),
+  B("FE-04","ramas_sobre_transito","¿Ramas muertas o rotas sobre zonas de tránsito?",{when:f=>num(f.ramas_muertas)>0||num(f.ramas_rotas)>0}),
   B("FE-05","codominancia","¿Codominancia (unión en V)?",{}),
   B("FE-06","ramas_sobreextendidas","¿Ramas sobreextendidas?",{}),
   B("FE-07","desbalance_copa","¿Desbalance de copa?",{})
@@ -726,6 +726,7 @@ function render(){
   else if(state.screen==="detail") app.innerHTML=viewDetail();
   else if(state.screen==="export") app.innerHTML=viewExport();
   app.scrollTop=0;
+  if(state.screen==="wizard") actualizarVisibilidad();
   if(state.screen==="wizard" && prevScreen==="wizard" && prevStep===state.step){
     const sc=document.querySelector(".scroll"); if(sc) sc.scrollTop=prevScroll;
   }
@@ -990,7 +991,7 @@ function viewWizard(){
   if(st.id==="res") h+=resumen(f);
   else {
     h+='<h2 class="secthead">'+esc(st.title)+'</h2><p class="sectnote">'+esc(st.note)+'</p>';
-    h+=st.fields.filter(fld=>!fld.when||fld.when(f)).map(fld=>fieldHTML(fld,f)).join("");
+    h+=st.fields.map(fld=>fieldHTML(fld,f)).join("");
   }
   h+='</div>';
   h+='<div class="foot"><button class="btnb" data-a="prev"'+(state.step===0?" disabled":"")+'>Atrás</button>'+
@@ -1005,32 +1006,32 @@ function fieldHTML(fld,f){
   const req=fld.req?' <span class="req">*</span>':'';
   const L='<label>'+code+esc(fld.l)+req+'</label>';
   const u=fld.u?'<div class="unit">Unidad: '+esc(fld.u)+'</div>':'';
-  if(fld.t==="text") return '<div class="field">'+L+help+'<input type="text" data-k="'+esc(fld.k)+'" value="'+esc(val)+'"></div>';
-  if(fld.t==="num"||fld.t==="int") return '<div class="field">'+L+help+'<input type="number" inputmode="'+(fld.t==="int"?"numeric":"decimal")+'" data-k="'+esc(fld.k)+'" value="'+esc(val)+'"'+(fld.min!=null?' min="'+fld.min+'"':'')+(fld.max!=null?' max="'+fld.max+'"':'')+(fld.step?' step="'+fld.step+'"':'')+'>'+u+'</div>';
-  if(fld.t==="time") return '<div class="field">'+L+help+'<input type="time" data-k="'+esc(fld.k)+'" value="'+esc(val)+'"></div>';
-  if(fld.t==="select") return '<div class="field">'+L+help+'<select data-k="'+esc(fld.k)+'"><option value="">— Seleccione —</option>'+escSel(fld,val)+'</select></div>';
+  if(fld.t==="text") return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<input type="text" data-k="'+esc(fld.k)+'" value="'+esc(val)+'"></div>';
+  if(fld.t==="num"||fld.t==="int") return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<input type="number" inputmode="'+(fld.t==="int"?"numeric":"decimal")+'" data-k="'+esc(fld.k)+'" value="'+esc(val)+'"'+(fld.min!=null?' min="'+fld.min+'"':'')+(fld.max!=null?' max="'+fld.max+'"':'')+(fld.step?' step="'+fld.step+'"':'')+'>'+u+'</div>';
+  if(fld.t==="time") return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<input type="time" data-k="'+esc(fld.k)+'" value="'+esc(val)+'"></div>';
+  if(fld.t==="select") return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<select data-k="'+esc(fld.k)+'"><option value="">— Seleccione —</option>'+escSel(fld,val)+'</select></div>';
   if(fld.t==="multi"){
     const arr=esArr(val);
-    return '<div class="field">'+L+help+'<div class="checks">'+fld.o.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return '<label class="check"><input type="checkbox" data-multi="'+esc(fld.k)+'" value="'+esc(v)+'"'+(arr.indexOf(v)>=0?" checked":"")+'><span>'+esc(l)+'</span></label>'}).join("")+'</div></div>';
+    return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<div class="checks">'+fld.o.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return '<label class="check"><input type="checkbox" data-multi="'+esc(fld.k)+'" value="'+esc(v)+'"'+(arr.indexOf(v)>=0?" checked":"")+'><span>'+esc(l)+'</span></label>'}).join("")+'</div></div>';
   }
-  if(fld.t==="bool") return '<div class="field">'+L+help+'<div class="toggle"><button type="button" data-bool="'+esc(fld.k)+'" data-v="1" class="'+(val===true?"on":"")+'">Sí</button><button type="button" data-bool="'+esc(fld.k)+'" data-v="0" class="'+(val===false?"on":"")+'">No</button></div></div>';
-  if(fld.t==="sev") return '<div class="field">'+L+help+'<div class="sev">'+SEV.map(s=>'<button type="button" data-sev="'+esc(fld.k)+'" data-v="'+s[0]+'" class="'+(String(val)===s[0]?"on s"+s[0]:"")+'"><b>'+s[0]+'</b>'+s[1]+'</button>').join("")+'</div></div>';
+  if(fld.t==="bool") return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<div class="toggle"><button type="button" data-bool="'+esc(fld.k)+'" data-v="1" class="'+(val===true?"on":"")+'">Sí</button><button type="button" data-bool="'+esc(fld.k)+'" data-v="0" class="'+(val===false?"on":"")+'">No</button></div></div>';
+  if(fld.t==="sev") return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<div class="sev">'+SEV.map(s=>'<button type="button" data-sev="'+esc(fld.k)+'" data-v="'+s[0]+'" class="'+(String(val)===s[0]?"on s"+s[0]:"")+'"><b>'+s[0]+'</b>'+s[1]+'</button>').join("")+'</div></div>';
   if(fld.t==="gps"){
     const g=f.gps||{};
     const txt = g.lat!=null ? ('<b>'+f2(g.lat)+', '+f2(g.lng)+'</b><br>Precisión ±'+f1(g.precision)+' m'+(g.alt!=null?' · Altitud '+f1(g.alt)+' m':'')) : "Sin capturar.";
-    return '<div class="field">'+L+help+'<div class="gps">'+txt+'</div><div style="height:8px"></div><button class="btnline" data-a="gps">Capturar coordenadas GPS</button></div>';
+    return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<div class="gps">'+txt+'</div><div style="height:8px"></div><button class="btnline" data-a="gps">Capturar coordenadas GPS</button></div>';
   }
-  if(fld.t==="photo") return '<div class="field">'+L+help+'<div class="photo" data-photo="'+esc(fld.k)+'">'+(val?'<img src="'+val+'"><span>Cambiar fotografía</span>':"Tocar para tomar o adjuntar la fotografía")+'</div></div>';
+  if(fld.t==="photo") return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<div class="photo" data-photo="'+esc(fld.k)+'">'+(val?'<img src="'+val+'"><span>Cambiar fotografía</span>':"Tocar para tomar o adjuntar la fotografía")+'</div></div>';
   if(fld.t==="fustes"){
     const nf=Math.max(1,esArr(f.medidas_fustes).length);
     let rows=""; for(let i=0;i<nf;i++){ rows+='<div class="rowb" style="margin-bottom:6px"><span class="mono" style="width:74px">Fuste '+(i+1)+'</span><input type="number" step="0.1" inputmode="decimal" style="flex:1;padding:0 12px;height:46px;border:1.5px solid #CBD5D0;border-radius:12px;font-size:16px" data-fuste="'+i+'" value="'+esc(esArr(f.medidas_fustes)[i]||"")+'"></div>'; }
     const m=calcularMedidas(f);
-    return '<div class="field">'+L+help+'<div style="font-size:12.5px;color:#4A5A52;margin-bottom:8px">Se registra '+(f.metodo_diam==="CAP"?"CAP":"DAP")+' de cada tronco. Ajuste el número de fustes en DS-02.</div>'+rows+
+    return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<div style="font-size:12.5px;color:#4A5A52;margin-bottom:8px">Se registra '+(f.metodo_diam==="CAP"?"CAP":"DAP")+' de cada tronco. Ajuste el número de fustes en DS-02.</div>'+rows+
       '<div class="computed">DAP equivalente: <b>'+f1(m.dap_equivalente)+'</b> cm</div>'+u+'</div>';
   }
-  if(fld.t==="auto") return '<div class="field">'+L+help+'<div class="computed">'+esc(val)+'</div></div>';
+  if(fld.t==="auto") return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<div class="computed">'+esc(val)+'</div></div>';
   if(fld.t==="computed"){
-    return '<div class="field">'+L+help+'<div class="computed" data-k="'+esc(fld.k)+'">'+computedVal(f,fld.k)+'</div></div>';
+    return '<div class="field" data-field="'+esc(fld.k)+'">'+L+help+'<div class="computed" data-k="'+esc(fld.k)+'">'+computedVal(f,fld.k)+'</div></div>';
   }
   return "";
 }
@@ -1191,12 +1192,28 @@ document.addEventListener("input",e=>{
     }
     if(t.dataset.k==="num_fustes"||t.dataset.k==="institucion"||t.dataset.k==="metodo_diam"||t.dataset.k==="consecutivo"){ recomputar(state.form); }
     if(t.dataset.k==="num_fustes"||t.dataset.k==="consecutivo"){ render(); return; }
-    actualizarComputadosWizard(); return;
+    actualizarComputadosWizard();
+    actualizarVisibilidad();
+    return;
   }
 });
 document.addEventListener("change",e=>{
   if(e.target.id==="instsel"){ state.instFiltro=e.target.value; state.listLimit=30; render(); }
 });
+function actualizarVisibilidad(){
+  const st=STEPS[state.step]; if(!st) return;
+  st.fields.forEach(fld=>{
+    const visible = (!fld.when || fld.when(state.form));
+    if(!visible){
+      const v=state.form[fld.k];
+      if(fld.t==="bool"){ if(v!=null) state.form[fld.k]=null; }
+      else if(fld.t==="multi"){ if(esArr(v).length) state.form[fld.k]=[]; }
+      else if(v!=="" && v!=null) state.form[fld.k]="";
+    }
+    const el=document.querySelector('[data-field="'+fld.k+'"]'); if(!el||!el.style) return;
+    el.style.display = visible ? "" : "none";
+  });
+}
 function actualizarComputadosWizard(){
   const st=STEPS[state.step]; if(!st) return;
   st.fields.filter(f=>f.t==="computed").forEach(f=>{
