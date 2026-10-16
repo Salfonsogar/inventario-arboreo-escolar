@@ -33,7 +33,7 @@ a{color:#087F5B}a:hover{color:#065F44}
 .num{font-family:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;font-weight:800;line-height:1}
 .card{background:#fff;border-radius:16px;box-shadow:0 1px 2px rgba(38,51,45,.06),0 6px 16px rgba(38,51,45,.06)}
 .pad{padding:14px}
-.btnp{width:100%;height:58px;border:0;border-radius:16px;background:#087F5B;color:#fff;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:0 6px 16px rgba(8,127,91,.28)}
+.btnp{width:100%;height:76px;border:0;border-radius:16px;background:#087F5B;color:#fff;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:0 6px 16px rgba(8,127,91,.28)}
 .btnp:active{transform:scale(.99)}
 .btnb{flex:1;height:52px;border:0;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;background:#E8F5EF;color:#087F5B}
 .btnb.primary{background:#087F5B;color:#fff}
@@ -69,7 +69,7 @@ a{color:#087F5B}a:hover{color:#065F44}
 .sev button.on{color:#fff;border-color:transparent}
 .sev button.on.s0{background:#8AA79B}.sev button.on.s1{background:#84B84F}.sev button.on.s2{background:#E0A32E}.sev button.on.s3{background:#D9732E}.sev button.on.s4{background:#C0392B}
 .checks{display:flex;flex-direction:column;gap:8px}
-.check{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;background:#fff;border:1.5px solid #CBD5D0;border-radius:12px;padding:12px;cursor:pointer}
+.check{display:flex;gap:16px;align-items:flex-start;font-size:14.5px;background:#fff;border:1.5px solid #CBD5D0;border-radius:12px;padding:12px;cursor:pointer}
 .check input{width:20px;height:20px;margin:0;accent-color:#087F5B;flex-shrink:0}
 .toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .toggle button{height:48px;border:1.5px solid #CBD5D0;background:#fff;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;color:#4A5A52}
@@ -185,12 +185,10 @@ const STEPS = [
   T("ID-02","evaluador","Evaluador principal",{req:true,help:"Nombres y apellidos completos. Es el universitario líder."}),
   T("ID-02","evaluadores_apoyo","Evaluadores de apoyo",{help:"Estudiantes de colegio y docentes que acompañan."}),
   O("ID-03","institucion","Institución y sede",INST.map(i=>[i.id,i.nombre]),{req:true}),
-  T("ID-03","codigo_dane","Código DANE de la sede",{help:"12 dígitos, de la lista oficial del docente."}),
   T("ID-03","sede","Sede o jornada",{}),
   T("ID-04","municipio","Municipio",{def:"Valledupar"}),
   O("ID-04","zona","Zona",[["urbana","Urbana"],["rural","Rural"]]),
   T("ID-04","comuna","Comuna o corregimiento",{}),
-  N("ID-05","consecutivo","Consecutivo",{t:"int",help:"Inicia en 1 en cada sede y no se repite. La app lo propone automáticamente."}),
   {c:"ID-06",k:"codigo_arbol",l:"Código del árbol",t:"computed",help:"Lo genera la aplicación: prefijo de la sede + consecutivo (p. ej. IE001-0045)."},
   {c:"ID-07",k:"gps",l:"Coordenadas geográficas",t:"gps",help:"Ubíquese junto al fuste, en el lado más despejado. Precisión ≤ 5 m."},
   {c:"ID-08",k:"foto_general",l:"Fotografía del individuo completo",t:"photo",help:"De la base al ápice, con la placa o un adulto de referencia."},
@@ -202,13 +200,12 @@ const STEPS = [
  note:"La especie es requisito para la densidad de la madera, las ecuaciones alométricas y los riesgos propios de la especie. Ante duda: «por confirmar» y muestra.",
  fields:[
   O("TX-01","nombre_comun","Nombre común",ESPECIES.map(e=>[e[0],e[0]]),{req:true,help:"Como lo nombra la comunidad."}),
-  T("TX-02","nombre_cientifico","Nombre científico",{help:"Género y especie con autor (ej. Mangifera indica L.)."}),
-  T("TX-03","familia","Familia botánica",{help:"Ej. Anacardiaceae."}),
+  T("TX-02","nombre_cientifico","Nombre científico",{help:"Se completa solo al elegir el nombre común; puede ajustarlo."}),
   O("TX-04","origen","Origen de la especie",[["nativa","Nativa"],["exotica","Exótica"],["invasora","Invasora"],["nose","No se sabe"]]),
   O("TX-05","confianza_id","Confianza de la identificación",[["confirmada","Confirmada"],["genero","Solo a género"],["por_confirmar","Por confirmar"]]),
   B("TX-06","muestra_botanica","¿Se colectó muestra botánica?",{}),
-  T("TX-06","num_colecta","Número de colecta",{help:"Iniciales + consecutivo (ej. JP-012)."}),
-  B("TX-06","muestra_fertil","¿La muestra es fértil (flores o frutos)?",{})
+  T("TX-06","num_colecta","Número de colecta",{when:f=>f.muestra_botanica===true,help:"Iniciales + consecutivo (ej. JP-012)."}),
+  B("TX-06","muestra_fertil","¿La muestra es fértil (flores o frutos)?",{when:f=>f.muestra_botanica===true})
 ]},
 {id:"ds", code:"8.3", title:"Variables dasométricas",
  note:"Base del área basal, biomasa, carbono y CO₂. Un error aquí se propaga a todos los resultados.",
@@ -718,6 +715,9 @@ function recomputar(f){
 /* ---------- 8. Render ---------- */
 function render(){
   const app=$("#app");
+  const sc0=document.querySelector(".scroll");
+  const prevScroll=sc0?sc0.scrollTop:0;
+  const prevScreen=state.screen, prevStep=state.step;
   detenerCarrusel();
   if(state.screen==="home") app.innerHTML=viewHome();
   else if(state.screen==="list") app.innerHTML=viewList();
@@ -727,6 +727,9 @@ function render(){
   else if(state.screen==="detail") app.innerHTML=viewDetail();
   else if(state.screen==="export") app.innerHTML=viewExport();
   app.scrollTop=0;
+  if(state.screen==="wizard" && prevScreen==="wizard" && prevStep===state.step){
+    const sc=document.querySelector(".scroll"); if(sc) sc.scrollTop=prevScroll;
+  }
   if(state.screen==="home") iniciarCarrusel();
 }
 function headerBack(title,accion,extra){
@@ -988,7 +991,7 @@ function viewWizard(){
   if(st.id==="res") h+=resumen(f);
   else {
     h+='<h2 class="secthead">'+esc(st.title)+'</h2><p class="sectnote">'+esc(st.note)+'</p>';
-    h+=st.fields.map(fld=>fieldHTML(fld,f)).join("");
+    h+=st.fields.filter(fld=>!fld.when||fld.when(f)).map(fld=>fieldHTML(fld,f)).join("");
   }
   h+='</div>';
   h+='<div class="foot"><button class="btnb" data-a="prev"'+(state.step===0?" disabled":"")+'>Atrás</button>'+
@@ -1114,6 +1117,7 @@ function viewExport(){
 function camposPlanos(){
   const cols=[];
   STEPS.forEach(s=>s.fields.forEach(f=>{ if(f.t!=="computed"&&f.t!=="auto"&&f.t!=="photo"&&f.t!=="gps"&&f.k!=="medidas_fustes") cols.push([s.code+" "+f.c,f.k]); }));
+  cols.unshift(["ID-06 Código del árbol","__codigo"]);
   cols.push(["ID-07 Latitud","__lat"],["ID-07 Longitud","__lng"],["ID-07 Precisión (m)","__prec"]);
   cols.push(["DS-05 DAP equivalente (cm)","__dap"],["DS-09 Área de copa (m²)","__areacopa"]);
   cols.push(["CT-01 ΔT (°C)","__dt"],["CT-04 Índice de calor (°C)","__ic"],["CT-05 Área de sombra (m²)","__areasombra"]);
@@ -1122,6 +1126,7 @@ function camposPlanos(){
 }
 function f1n(v){return v==null?"":r1(v)}
 function valorPlano(r,k){
+  if(k==="__codigo") return r.codigo_arbol||"";
   if(k==="__lat") return r.gps&&r.gps.lat!=null?r.gps.lat:"";
   if(k==="__lng") return r.gps&&r.gps.lng!=null?r.gps.lng:"";
   if(k==="__prec") return r.gps&&r.gps.precision!=null?r.gps.precision:"";
@@ -1160,16 +1165,31 @@ document.addEventListener("click",e=>{
   const ms=e.target.closest("[data-mapsel]"); if(ms){ state.mapSel=ms.dataset.mapsel; render(); return; }
   const op=e.target.closest("[data-open]"); if(op){ state.editId=op.dataset.open; state.screen="detail"; render(); return; }
   const sev=e.target.closest("[data-sev]"); if(sev){ state.form[sev.dataset.sev]=sev.dataset.v; render(); return; }
-  const bo=e.target.closest("[data-bool]"); if(bo){ state.form[bo.dataset.bool]= bo.dataset.v==="1"; render(); return; }
+  const bo=e.target.closest("[data-bool]"); if(bo){ const k=bo.dataset.bool, v=bo.dataset.v==="1"; state.form[k]=v; if(k==="muestra_botanica"&&!v){ state.form.num_colecta=""; state.form.muestra_fertil=null; } render(); return; }
   const ph=e.target.closest("[data-photo]"); if(ph){ elegirFoto(ph.dataset.photo); return; }
 });
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.id==="q"){ state.query=t.value; const pos=t.selectionStart; render(); const nq=$("#q"); if(nq){nq.focus();nq.setSelectionRange(pos,pos);} return; }
-  if(t.dataset.multi){ const k=t.dataset.multi, arr=esArr(state.form[k]).slice(); const i=arr.indexOf(t.value); if(t.checked&&i<0)arr.push(t.value); if(!t.checked&&i>=0)arr.splice(i,1); state.form[k]=arr; return; }
+  if(t.dataset.multi){
+    const k=t.dataset.multi; let arr=esArr(state.form[k]).slice();
+    const v=t.value, excl=/^Ningun/i.test(v);
+    if(t.checked){
+      if(excl) arr=[v];
+      else { arr=arr.filter(x=>!/^Ningun/i.test(x)); if(arr.indexOf(v)<0) arr.push(v); }
+    } else {
+      arr=arr.filter(x=>x!==v);
+    }
+    state.form[k]=arr; render(); return;
+  }
   if(t.dataset.fuste!=null){ const arr=esArr(state.form.medidas_fustes).slice(); arr[+t.dataset.fuste]=t.value; state.form.medidas_fustes=arr; actualizarComputadosWizard(); return; }
   if(t.dataset.k){
     state.form[t.dataset.k]=t.value;
+    if(t.dataset.k==="nombre_comun"){
+      const esp=ESPECIES.filter(e=>e[0]===t.value)[0];
+      state.form.nombre_cientifico = esp ? esp[1] : "";
+      const nc=document.querySelector('[data-k="nombre_cientifico"]'); if(nc) nc.value=state.form.nombre_cientifico;
+    }
     if(t.dataset.k==="num_fustes"||t.dataset.k==="institucion"||t.dataset.k==="metodo_diam"||t.dataset.k==="consecutivo"){ recomputar(state.form); }
     if(t.dataset.k==="num_fustes"||t.dataset.k==="consecutivo"){ render(); return; }
     actualizarComputadosWizard(); return;
