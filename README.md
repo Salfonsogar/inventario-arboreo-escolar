@@ -28,7 +28,7 @@ Además calcula automáticamente el DAP a partir del CAP, el área de copa, el �
 
 ## Características
 
-- **Interfaz tipo aplicación móvil** con las mismas pantallas del prototipo original: inicio con carrusel de imágenes y tarjetas de resumen, lista de árboles con búsqueda y filtros, mapa esquemático por institución y panel de estadísticas.
+- **Interfaz optimizada para móvil que ocupa toda la pantalla**, con las mismas pantallas del prototipo original: inicio con carrusel de imágenes y tarjetas de resumen, lista de árboles con búsqueda y filtros, mapa esquemático por institución y panel de estadísticas.
 - **Funciona sin conexión.** Los registros se guardan en el almacenamiento local del dispositivo (RF-01).
 - **Motor guiado por el diccionario de datos del protocolo:** 18 pasos de captura con validaciones (RF-04, RF-07).
 - **Datos piloto de demostración:** la primera vez que se abre, la aplicación carga **128 registros de ejemplo** (14 especies, DAP promedio 46,3 cm, altura promedio 10,2 m) para mostrar el comportamiento del panel y del mapa. Se pueden restablecer o borrar desde «Exportar datos».
